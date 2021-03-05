@@ -1,6 +1,7 @@
 [Unit]
 Description=System Sensor service
 After=multi-user.target
+Requires=systemd-networkd-wait-online.service
 
 [Service]
 User=pi
