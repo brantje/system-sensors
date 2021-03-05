@@ -1,13 +1,16 @@
 mqtt:
-  hostname: 127.0.0.1
-  port: 1234 #defaults to 1883
-  user: test
-  password: test
-deviceName: test
-client_id: test
-timezone: Europe/Brussels
-update_interval: 60 #Defaults to 60
-check_wifi_strength: true
+  hostname: 192.168.2.34
+  port: 1883
+  user: sensor
+  password: bebe1351b731601a64cc7e340a80f412
+deviceName: server-eu3x
+client_id: servereu
+timezone: Europe/Amsterdam
+update_interval: 5 #Defaults to 60
+check_wifi_strength: false
 check_available_updates: true
-external_drives:
-  Drive1: /boot/
+enable_rust_server: true
+rust_server_ip: 
+rcon_password: yourrconpass
+#external_drives:
+  #Drive1: /

@@ -10,12 +10,14 @@ import time
 from datetime import timedelta
 from re import findall
 from subprocess import check_output
-from rpi_bad_power import new_under_voltage
 import paho.mqtt.client as mqtt
 import psutil
 import pytz
 import yaml
 import csv
+import websocket
+import json
+from os import path
 from pytz import timezone
 
 try:
@@ -98,7 +100,10 @@ def on_message(client, userdata, message):
         send_config_message(client)
 
 
+previousResponse = False
 def updateSensors():
+    global previousResponse
+    write_message_to_console('Updating sensors...')
     payload_str = (
         '{'
         + f'"temperature": {get_temp()},'
@@ -106,7 +111,6 @@ def updateSensors():
         + f'"memory_use": {get_memory_usage()},'
         + f'"cpu_usage": {get_cpu_usage()},'
         + f'"swap_usage": {get_swap_usage()},'
-        + f'"power_status": "{get_rpi_power_status()}",'
         + f'"last_boot": "{get_last_boot()}",'
         + f'"last_message": "{get_last_message()}",'
         + f'"host_name": "{get_host_name()}",'
@@ -116,6 +120,27 @@ def updateSensors():
     )
     if "check_available_updates" in settings and settings["check_available_updates"] and not apt_disabled:
         payload_str = payload_str + f', "updates": {get_updates()}' 
+    
+    if "enable_rust_server" in settings and settings["enable_rust_server"]:
+        serverip = "localhost"
+        if "rust_server_ip" in settings and settings["rust_server_ip"] != "":
+            serverip = settings["rust_server_ip"]
+        rustresponse = get_rust_server_info(serverip, '28016', settings["rcon_password"])
+        if('MaxPlayers' not in rustresponse):
+            write_message_to_console("Error fetching server info, it might be down or something else... i dunnow...")
+            rustresponse = previousResponse
+
+        payload_str = payload_str + f', "rust_server_max_players": {rustresponse["MaxPlayers"]}'        
+        payload_str = payload_str + f', "rust_server_players": {rustresponse["Players"]}'        
+        payload_str = payload_str + f', "rust_server_players_queued": {rustresponse["Queued"]}'        
+        payload_str = payload_str + f', "rust_server_players_joining": {rustresponse["Joining"]}'        
+        payload_str = payload_str + f', "rust_server_entity_count": {rustresponse["EntityCount"]}'        
+        payload_str = payload_str + f', "rust_server_framerate": {rustresponse["Framerate"]}'        
+        payload_str = payload_str + f', "rust_server_memory": {rustresponse["Memory"]}'        
+        payload_str = payload_str + f', "rust_server_network_in": {rustresponse["NetworkIn"]}'        
+        payload_str = payload_str + f', "rust_server_network_out": {rustresponse["NetworkOut"]}'        
+        previousResponse = rustresponse
+    
     if "check_wifi_strength" in settings and settings["check_wifi_strength"]:
         payload_str = payload_str + f', "wifi_strength": {get_wifi_strength()}'
     if "external_drives" in settings:
@@ -141,13 +166,16 @@ def get_updates():
 
 # Temperature method depending on system distro
 def get_temp():
-    temp = "";
+    temp = ""
     if "rasp" in OS_DATA["ID"]:
         reading = check_output(["vcgencmd", "measure_temp"]).decode("UTF-8")
         temp = str(findall("\d+\.\d+", reading)[0])
     else:
-        reading = check_output(["cat", "/sys/class/thermal/thermal_zone0/temp"]).decode("UTF-8")
-        temp = str(reading[0] + reading[1] + "." + reading[2])
+        if(path.exists("/sys/class/thermal/thermal_zone0")):
+            reading = check_output(["cat", "/sys/class/thermal/thermal_zone0/temp"]).decode("UTF-8")
+            temp = str(reading[0] + reading[1] + "." + reading[2])
+        else:
+            temp = 0.0
     return temp
 
 def get_disk_usage(path):
@@ -179,9 +207,6 @@ def get_wifi_strength():  # check_output(["/proc/net/wireless", "grep wlan0"])
     return (wifi_strength_value)
 
 
-def get_rpi_power_status():
-    return _underVoltage.get()
-
 def get_host_name():
     return socket.gethostname()
 
@@ -210,6 +235,27 @@ def get_host_arch():
     except:
         return "Unknown"
 
+def get_rust_server_info(ip, port, password):
+    server_uri = 'ws://{0}:{1}/{2}'.format(ip, port, password)
+    command_json = {}
+    command_json["Identifier"] = 1
+    command_json["Message"] = 'serverinfo'
+    command_json["Name"] = "WebRcon"
+    command_json = json.dumps(command_json)
+    ws = websocket.WebSocket()
+
+    try:
+       ws.connect(server_uri)
+       ws.send(command_json)
+       response = ws.recv()
+       ws.close()
+       response = json.loads(response.replace("\n", ""))
+       return json.loads(response["Message"])
+    except Exception as e:
+       # Inform the user it was a failure to connect. provide Exception string for further diagnostics.
+       response = "Failed to connect. {}".format(str(e))
+       return response
+
 def remove_old_topics():
     mqttClient.publish(
         topic=f"homeassistant/sensor/{deviceNameDisplay}/{deviceNameDisplay}Temp/config",
@@ -237,12 +283,6 @@ def remove_old_topics():
     )
     mqttClient.publish(
         topic=f"homeassistant/sensor/{deviceNameDisplay}/{deviceNameDisplay}SwapUsage/config",
-        payload='',
-        qos=1,
-        retain=False,
-    )
-    mqttClient.publish(
-        topic=f"homeassistant/binary_sensor/{deviceNameDisplay}/{deviceNameDisplay}PowerStatus/config",
         payload='',
         qos=1,
         retain=False,
@@ -310,6 +350,7 @@ def check_settings(settings):
 
 def send_config_message(mqttClient):
     write_message_to_console("send config message")
+    board_vendor = 'test' #check_output("cat", "/sys/class/dmi/id/board_vendor")
     mqttClient.publish(
         topic=f"homeassistant/sensor/{deviceName}/temperature/config",
         payload='{"device_class":"temperature",'
@@ -320,7 +361,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_temperature\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:thermometer\"}}",
         qos=1,
         retain=True,
@@ -335,7 +376,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_disk_use\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:micro-sd\"}}",
         qos=1,
         retain=True,
@@ -350,7 +391,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_memory_use\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:memory\"}}",
         qos=1,
         retain=True,
@@ -365,7 +406,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_cpu_usage\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:memory\"}}",
         qos=1,
         retain=True,
@@ -380,28 +421,12 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_swap_usage\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:harddisk\"}}",
         qos=1,
         retain=True,
     )
     
-    mqttClient.publish(
-        topic=f"homeassistant/binary_sensor/{deviceName}/power_status/config",
-        payload='{"device_class":"problem",'
-                + f"\"name\":\"{deviceNameDisplay} Under Voltage\","
-                + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
-                + '"value_template":"{{value_json.power_status}}",'
-                + f"\"unique_id\":\"{deviceName}_sensor_power_status\","
-                + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
-                + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}}"
-                + f"}}",
-        qos=1,
-        retain=True,
-    )
-    
-   
     mqttClient.publish(
         topic=f"homeassistant/sensor/{deviceName}/last_boot/config",
         payload='{"device_class":"timestamp",'
@@ -411,7 +436,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_last_boot\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:clock\"}}",
         qos=1,
         retain=True,
@@ -424,7 +449,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_name\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:card-account-details\"}}",
         qos=1,
         retain=True,
@@ -437,7 +462,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_ip\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:lan\"}}",
         qos=1,
         retain=True,
@@ -450,7 +475,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_os\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:linux\"}}",
         qos=1,
         retain=True,
@@ -463,22 +488,8 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_arch\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
                 + f"\"icon\":\"mdi:chip\"}}",
-        qos=1,
-        retain=True,
-    )
-    mqttClient.publish(
-        topic=f"homeassistant/sensor/{deviceName}/last_message/config",
-        payload='{"device_class":"timestamp",'
-                + f"\"name\":\"{deviceNameDisplay} Last Message\","
-                + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
-                + '"value_template":"{{value_json.last_message}}",'
-                + f"\"unique_id\":\"{deviceName}_sensor_last_message\","
-                + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
-                + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
-                + f"\"icon\":\"mdi:clock-check\"}}",
         qos=1,
         retain=True,
     )
@@ -492,18 +503,146 @@ def send_config_message(mqttClient):
         else:
             mqttClient.publish(
                 topic=f"homeassistant/sensor/{deviceName}/updates/config",
-                payload=f"{{\"name\":\"{deviceNameDisplay} Updates\","
+                payload=f"{{\"name\":\"{deviceNameDisplay} Update Available\","
                         + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
                         + '"value_template":"{{value_json.updates}}",'
                         + f"\"unique_id\":\"{deviceName}_sensor_updates\","
                         + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                         + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                        + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                        + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
                         + f"\"icon\":\"mdi:cellphone-arrow-down\"}}",
                 qos=1,
                 retain=True,
             )
             
+
+    if "enable_rust_server" in settings and settings["enable_rust_server"]:
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_maxplayers/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Max players\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_max_players}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_max_players\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:account-group\"}}",
+            qos=1,
+            retain=True,
+        )
+  
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_players/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Players\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_players}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_players\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:account-group\"}}",
+            qos=1,
+            retain=True,
+        )
+            
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_players_queued/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Queued\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_players_queued}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_players_queued\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:human-queue\"}}",
+            qos=1,
+            retain=True,
+        )
+            
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_players_joining/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Joining\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_players_joining}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_players_joining\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:account-group\"}}",
+            qos=1,
+            retain=True,
+        )
+
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_entity_count/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Entity Count\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_entity_count}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_entity_count\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:pine-tree\"}}",
+            qos=1,
+            retain=True,
+        )
+
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_framerate/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Framerate\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_framerate}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_framerate\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:crosshairs\"}}",
+            qos=1,
+            retain=True,
+        )                      
+
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_memory/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Rust Server Memory\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_memory}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_memory\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:memory\"}}",
+            qos=1,
+            retain=True,
+        )
+
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_network_in/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Network In\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_network_in}}",'
+                    + f"\"unique_id\":\"{deviceName}_rustserver_network_in\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:arrow-down\"}}",
+            qos=1,
+            retain=True,
+        )
+
+        mqttClient.publish(
+            topic=f"homeassistant/sensor/{deviceName}/rustserver_network_out/config",
+            payload=f"{{\"name\":\"{deviceNameDisplay} Network Out\","
+                    + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"value_template":"{{value_json.rust_server_network_out}}",'
+                    + f"\"unique_id\":\"{deviceName}_sensor_rustserver_network_out\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"icon\":\"mdi:arrow-up\"}}",
+            qos=1,
+            retain=True,
+        )
+
 
     if "check_wifi_strength" in settings and settings["check_wifi_strength"]:
         mqttClient.publish(
@@ -584,12 +723,14 @@ if __name__ == "__main__":
         mqttClient.connect(settings["mqtt"]["hostname"], settings["mqtt"]["port"])
     else:
         mqttClient.connect(settings["mqtt"]["hostname"], 1883)
-    try:
-        remove_old_topics()
-        send_config_message(mqttClient)
-    except:
-        write_message_to_console("something whent wrong")
-    _underVoltage = new_under_voltage()
+    # try:
+    #     # remove_old_topics()
+    #     # send_config_message(mqttClient)
+    # except:
+    #     write_message_to_console("something whent wrong")
+    
+    remove_old_topics()
+    send_config_message(mqttClient)
     job = Job(interval=timedelta(seconds=WAIT_TIME_SECONDS), execute=updateSensors)
     job.start()
 
