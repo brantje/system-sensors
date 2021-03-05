@@ -3,7 +3,7 @@
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
+src/settings.yaml
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
