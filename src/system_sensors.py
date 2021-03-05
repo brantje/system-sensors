@@ -353,7 +353,6 @@ def check_settings(settings):
 
 def send_config_message(mqttClient):
     write_message_to_console("send config message")
-    board_vendor = 'test' #check_output("cat", "/sys/class/dmi/id/board_vendor")
     mqttClient.publish(
         topic=f"homeassistant/sensor/{deviceName}/temperature/config",
         payload='{"device_class":"temperature",'
@@ -364,7 +363,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_temperature\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:thermometer\"}}",
         qos=1,
         retain=True,
@@ -379,7 +378,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_disk_use\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:micro-sd\"}}",
         qos=1,
         retain=True,
@@ -394,7 +393,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_memory_use\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:memory\"}}",
         qos=1,
         retain=True,
@@ -409,7 +408,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_cpu_usage\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:memory\"}}",
         qos=1,
         retain=True,
@@ -424,7 +423,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_swap_usage\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:harddisk\"}}",
         qos=1,
         retain=True,
@@ -439,7 +438,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_last_boot\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:clock\"}}",
         qos=1,
         retain=True,
@@ -452,7 +451,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_name\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:card-account-details\"}}",
         qos=1,
         retain=True,
@@ -465,7 +464,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_ip\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:lan\"}}",
         qos=1,
         retain=True,
@@ -478,7 +477,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_os\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:linux\"}}",
         qos=1,
         retain=True,
@@ -491,7 +490,7 @@ def send_config_message(mqttClient):
                 + f"\"unique_id\":\"{deviceName}_sensor_host_arch\","
                 + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                 + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{board_vendor}\"}},"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                 + f"\"icon\":\"mdi:chip\"}}",
         qos=1,
         retain=True,
@@ -512,7 +511,7 @@ def send_config_message(mqttClient):
                         + f"\"unique_id\":\"{deviceName}_sensor_updates\","
                         + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                         + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                        + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                        + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                         + f"\"icon\":\"mdi:cellphone-arrow-down\"}}",
                 qos=1,
                 retain=True,
@@ -528,7 +527,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_max_players\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:account-group\"}}",
             qos=1,
             retain=True,
@@ -542,7 +541,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_players\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:account-group\"}}",
             qos=1,
             retain=True,
@@ -556,7 +555,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_players_queued\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:human-queue\"}}",
             qos=1,
             retain=True,
@@ -570,7 +569,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_players_joining\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:account-group\"}}",
             qos=1,
             retain=True,
@@ -584,7 +583,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_entity_count\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:pine-tree\"}}",
             qos=1,
             retain=True,
@@ -598,7 +597,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_framerate\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:crosshairs\"}}",
             qos=1,
             retain=True,
@@ -612,7 +611,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_memory\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:memory\"}}",
             qos=1,
             retain=True,
@@ -626,7 +625,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_rustserver_network_in\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:arrow-down\"}}",
             qos=1,
             retain=True,
@@ -640,7 +639,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_sensor_rustserver_network_out\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"{deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:arrow-up\"}}",
             qos=1,
             retain=True,
@@ -658,7 +657,7 @@ def send_config_message(mqttClient):
                     + f"\"unique_id\":\"{deviceName}_sensor_wifi_strength\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                    + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                    + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:wifi\"}}",
             qos=1,
             retain=True,
@@ -675,7 +674,7 @@ def send_config_message(mqttClient):
                         + f"\"unique_id\":\"{deviceName}_sensor_disk_use_{drive.lower()}\","
                         + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
                         + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
-                        + f"\"name\":\"{deviceNameDisplay} Sensors\",\"model\":\"RPI {deviceNameDisplay}\", \"manufacturer\":\"RPI\"}},"
+                        + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                         + f"\"icon\":\"mdi:harddisk\"}}",
                 qos=1,
                 retain=True,
@@ -715,6 +714,14 @@ if __name__ == "__main__":
     mqttClient.on_message = on_message
     deviceName = settings["deviceName"].replace(" ", "").lower()
     deviceNameDisplay = settings["deviceName"]
+    deviceManufacturer = settings["deviceName"]
+    if "deviceManufacturer" in settings and settings["deviceManufacturer"] != "":
+        deviceManufacturer = settings["deviceManufacturer"]
+
+    deviceModel = settings["deviceName"]
+    if "deviceModel" in settings and settings["deviceModel"] != "":
+        deviceModel = settings["deviceModel"]
+    
     mqttClient.will_set(f"system-sensors/sensor/{deviceName}/availability", "offline", retain=True)
     if "user" in settings["mqtt"]:
         mqttClient.username_pw_set(

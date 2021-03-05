@@ -4,6 +4,8 @@ mqtt:
   user: sensor
   password: bebe1351b731601a64cc7e340a80f412
 deviceName: server-eu3x
+deviceManufacturer: VirtualBox
+deviceModel: I99
 client_id: servereu
 timezone: Europe/Amsterdam
 update_interval: 5 #Defaults to 60
