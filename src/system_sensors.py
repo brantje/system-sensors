@@ -125,7 +125,10 @@ def updateSensors():
         serverip = "localhost"
         if "rust_server_ip" in settings and settings["rust_server_ip"] != "":
             serverip = settings["rust_server_ip"]
-        rustresponse = get_rust_server_info(serverip, '28016', settings["rcon_password"])
+        rcon_port = 28016
+        if "rust_rcon_port" in settings and settings["rust_rcon_port"] != "":
+            rcon_port = settings["rust_rcon_port"]            
+        rustresponse = get_rust_server_info(serverip, rcon_port, settings["rcon_password"])
         if('MaxPlayers' not in rustresponse):
             write_message_to_console("Error fetching server info, it might be down or something else... i dunnow...")
             rustresponse = previousResponse

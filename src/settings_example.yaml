@@ -11,6 +11,7 @@ check_wifi_strength: false
 check_available_updates: true
 enable_rust_server: true
 rust_server_ip: 
+rust_rcon_port:
 rcon_password: yourrconpass
 #external_drives:
   #Drive1: /
