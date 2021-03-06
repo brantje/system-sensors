@@ -101,8 +101,10 @@ def on_message(client, userdata, message):
 
 
 previousResponse = False
+rust_stat_fails = 0
 def updateSensors():
     global previousResponse
+    global rust_stat_fails
     write_message_to_console('Updating sensors...')
     network = get_network_usage()
     payload_str = (
@@ -134,20 +136,33 @@ def updateSensors():
         if "rust_rcon_port" in settings and settings["rust_rcon_port"] != None:
             rcon_port = settings["rust_rcon_port"]            
         rustresponse = get_rust_server_info(serverip, rcon_port, settings["rcon_password"])
+        rust_online_status = True
         if('MaxPlayers' not in rustresponse):
             write_message_to_console("Error fetching server info, it might be down or something else... i dunnow...")
             rustresponse = previousResponse
+            rust_stat_fails = rust_stat_fails+1
+            rust_online_status = False
+            
+        if rust_stat_fails == 3:
+            mqttClient.publish(f"system-sensors/sensor/{deviceName}/rust_server_availability", "offline", retain=True)
+            write_message_to_console('Offline')
 
-        payload_str = payload_str + f', "rust_server_max_players": {rustresponse["MaxPlayers"]}'        
-        payload_str = payload_str + f', "rust_server_players": {rustresponse["Players"]}'        
-        payload_str = payload_str + f', "rust_server_players_queued": {rustresponse["Queued"]}'        
-        payload_str = payload_str + f', "rust_server_players_joining": {rustresponse["Joining"]}'        
-        payload_str = payload_str + f', "rust_server_entity_count": {rustresponse["EntityCount"]}'        
-        payload_str = payload_str + f', "rust_server_framerate": {rustresponse["Framerate"]}'        
-        payload_str = payload_str + f', "rust_server_memory": {rustresponse["Memory"]}'        
-        payload_str = payload_str + f', "rust_server_network_in": {rustresponse["NetworkIn"] / 1024}'        
-        payload_str = payload_str + f', "rust_server_network_out": {rustresponse["NetworkOut"] / 1024}'        
-        previousResponse = rustresponse
+        elif rust_online_status == True:
+            rust_stat_fails = 0
+            write_message_to_console('back online')
+            mqttClient.publish(f"system-sensors/sensor/{deviceName}/rust_server_availability", "online", retain=True)
+        
+        if rustresponse: 
+            payload_str = payload_str + f', "rust_server_max_players": {rustresponse["MaxPlayers"]}'        
+            payload_str = payload_str + f', "rust_server_players": {rustresponse["Players"]}'        
+            payload_str = payload_str + f', "rust_server_players_queued": {rustresponse["Queued"]}'        
+            payload_str = payload_str + f', "rust_server_players_joining": {rustresponse["Joining"]}'        
+            payload_str = payload_str + f', "rust_server_entity_count": {rustresponse["EntityCount"]}'        
+            payload_str = payload_str + f', "rust_server_framerate": {rustresponse["Framerate"]}'        
+            payload_str = payload_str + f', "rust_server_memory": {rustresponse["Memory"]}'        
+            payload_str = payload_str + f', "rust_server_network_in": {rustresponse["NetworkIn"] / 1024}'        
+            payload_str = payload_str + f', "rust_server_network_out": {rustresponse["NetworkOut"] / 1024}'        
+            previousResponse = rustresponse
     
     if "check_wifi_strength" in settings and settings["check_wifi_strength"]:
         payload_str = payload_str + f', "wifi_strength": {get_wifi_strength()}'
@@ -583,7 +598,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_max_players}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_max_players\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:account-group\"}}",
@@ -598,7 +613,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_players}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_players\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:account-group\"}}",
@@ -613,7 +628,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_players_queued}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_players_queued\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:human-queue\"}}",
@@ -628,7 +643,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_players_joining}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_players_joining\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:account-group\"}}",
@@ -643,7 +658,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"Entities",'
                     + '"value_template":"{{value_json.rust_server_entity_count}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_entity_count\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:pine-tree\"}}",
@@ -658,7 +673,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"FPS",'
                     + '"value_template":"{{value_json.rust_server_framerate}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_framerate\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:crosshairs\"}}",
@@ -673,7 +688,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"MB",'
                     + '"value_template":"{{value_json.rust_server_memory}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_memory\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:memory\"}}",
@@ -688,7 +703,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"kB/s",'
                     + '"value_template":"{{value_json.rust_server_network_in}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_network_in\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:arrow-down\"}}",
@@ -703,7 +718,7 @@ def send_config_message(mqttClient):
                     + '"unit_of_measurement":"kB/s",'
                     + '"value_template":"{{value_json.rust_server_network_out}}",'
                     + f"\"unique_id\":\"{deviceName}_sensor_rustserver_network_out\","
-                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                    + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/rust_server_availability\","
                     + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
                     + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
                     + f"\"icon\":\"mdi:arrow-up\"}}",
@@ -748,7 +763,8 @@ def send_config_message(mqttClient):
             
 
     mqttClient.publish(f"system-sensors/sensor/{deviceName}/availability", "online", retain=True)
-
+    if "enable_rust_server" in settings and settings["enable_rust_server"]:
+        mqttClient.publish(f"system-sensors/sensor/{deviceName}/rust_server_availability", "online", retain=True)
 
 def _parser():
     """Generate argument parser"""
@@ -820,6 +836,8 @@ if __name__ == "__main__":
         except ProgramKilled:
             write_message_to_console("Program killed: running cleanup code")
             mqttClient.publish(f"system-sensors/sensor/{deviceName}/availability", "offline", retain=True)
+            if "enable_rust_server" in settings and settings["enable_rust_server"]:
+                mqttClient.publish(f"system-sensors/sensor/{deviceName}/rust_server_availability", "offline", retain=True)
             mqttClient.disconnect()
             mqttClient.loop_stop()
             sys.stdout.flush()
