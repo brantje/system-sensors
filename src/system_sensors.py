@@ -203,16 +203,22 @@ def get_swap_usage():
     return str(psutil.swap_memory().percent)
 
 
+network_stats_prev = psutil.net_io_counters()
+network_stats_prev_time = time.time()
 def get_network_usage():
-    network_stats1 = psutil.net_io_counters()
-    time.sleep(1)
-    network_stats2 = psutil.net_io_counters()
-    # now = time.time()
-    # time_diff = now - network_stats_prev_time
-    # byte_diff_rx = network_stats.get('bytes_recv') - network_stats_prev.bytes_recv
-    # byte_diff_tx = network_stats.bytes_sent - network_stats.bytes_send
-    tx_speed = round((network_stats2.bytes_sent - network_stats1.bytes_sent)/1024, 2)
-    rx_speed = round((network_stats2.bytes_recv - network_stats1.bytes_recv)/1024, 2)
+    global network_stats_prev
+    global network_stats_prev_time
+    network_stats = psutil.net_io_counters()
+    # time.sleep(1)
+    # network_stats2 = psutil.net_io_counters()
+
+    now = time.time()
+    time_diff = now - network_stats_prev_time
+
+    byte_diff_rx = (network_stats.bytes_recv - network_stats_prev.bytes_recv) / time_diff
+    byte_diff_tx = (network_stats.bytes_sent - network_stats_prev.bytes_sent) / time_diff
+    tx_speed = round(byte_diff_rx / 1024, 2)
+    rx_speed = round(byte_diff_tx/1024, 2)
     
     result = dict()
     result['network_out_speed'] = float(tx_speed)
@@ -775,8 +781,7 @@ if __name__ == "__main__":
     deviceName = settings["deviceName"].replace(" ", "").lower()
     deviceNameDisplay = settings["deviceName"]
     deviceManufacturer = settings["deviceName"]
-    network_stats_prev = psutil.net_io_counters()
-    network_stats_prev_time = time.time();
+    
     if "deviceManufacturer" in settings and settings["deviceManufacturer"] != "":
         deviceManufacturer = settings["deviceManufacturer"]
 
