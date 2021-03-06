@@ -1,8 +1,8 @@
 mqtt:
-  hostname: 192.168.2.34
+  hostname: 127.0.0.1
   port: 1883
-  user: sensor
-  password: bebe1351b731601a64cc7e340a80f412
+  user: 
+  password: 
 deviceName: server-eu3x
 deviceManufacturer: VirtualBox
 deviceModel: I99
