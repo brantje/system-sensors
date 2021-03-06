@@ -217,8 +217,8 @@ def get_network_usage():
 
     byte_diff_rx = (network_stats.bytes_recv - network_stats_prev.bytes_recv) / time_diff
     byte_diff_tx = (network_stats.bytes_sent - network_stats_prev.bytes_sent) / time_diff
-    tx_speed = round(byte_diff_rx / 1024, 2)
-    rx_speed = round(byte_diff_tx/1024, 2)
+    tx_speed = round(byte_diff_tx / 1024, 2)
+    rx_speed = round(byte_diff_rx/1024, 2)
     
     result = dict()
     result['network_out_speed'] = float(tx_speed)
