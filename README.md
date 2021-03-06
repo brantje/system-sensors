@@ -1,4 +1,4 @@
-# RPI System sensors
+# System sensors
 [![GitHub Release][releases-shield]][releases]
 [![License][license-shield]](LICENSE.md)
 
