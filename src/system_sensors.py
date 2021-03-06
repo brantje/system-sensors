@@ -104,6 +104,7 @@ previousResponse = False
 def updateSensors():
     global previousResponse
     write_message_to_console('Updating sensors...')
+    network = get_network_usage()
     payload_str = (
         '{'
         + f'"temperature": {get_temp()},'
@@ -116,8 +117,12 @@ def updateSensors():
         + f'"host_name": "{get_host_name()}",'
         + f'"host_ip": "{get_host_ip()}",'
         + f'"host_os": "{get_host_os()}",'
+        + f'"network_out": {network["network_out_speed"]},'
+        + f'"network_in": { network["network_in_speed"]},'
         + f'"host_arch": "{get_host_arch()}"'
     )
+
+
     if "check_available_updates" in settings and settings["check_available_updates"] and not apt_disabled:
         payload_str = payload_str + f', "updates": {get_updates()}' 
     
@@ -196,6 +201,23 @@ def get_cpu_usage():
 
 def get_swap_usage():
     return str(psutil.swap_memory().percent)
+
+
+def get_network_usage():
+    network_stats1 = psutil.net_io_counters()
+    time.sleep(1)
+    network_stats2 = psutil.net_io_counters()
+    # now = time.time()
+    # time_diff = now - network_stats_prev_time
+    # byte_diff_rx = network_stats.get('bytes_recv') - network_stats_prev.bytes_recv
+    # byte_diff_tx = network_stats.bytes_sent - network_stats.bytes_send
+    tx_speed = round((network_stats2.bytes_sent - network_stats1.bytes_sent)/1024, 2)
+    rx_speed = round((network_stats2.bytes_recv - network_stats1.bytes_recv)/1024, 2)
+    
+    result = dict()
+    result['network_out_speed'] = float(tx_speed)
+    result['network_in_speed'] = float(rx_speed)
+    return result
 
 
 def get_wifi_strength():  # check_output(["/proc/net/wireless", "grep wlan0"])
@@ -497,7 +519,35 @@ def send_config_message(mqttClient):
         retain=True,
     )
 
+    mqttClient.publish(
+        topic=f"homeassistant/sensor/{deviceName}/network_in/config",
+        payload=f"{{\"name\":\"{deviceNameDisplay} Network In\","
+                + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                + '"unit_of_measurement":"kB/s",'
+                + '"value_template":"{{value_json.network_in}}",'
+                + f"\"unique_id\":\"{deviceName}_network_in\","
+                + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
+                + f"\"icon\":\"mdi:arrow-down\"}}",
+        qos=1,
+        retain=True,
+    )
 
+    mqttClient.publish(
+        topic=f"homeassistant/sensor/{deviceName}/network_out/config",
+        payload=f"{{\"name\":\"{deviceNameDisplay} Network Out\","
+                + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                + '"unit_of_measurement":"kB/s",'
+                + '"value_template":"{{value_json.network_out}}",'
+                + f"\"unique_id\":\"{deviceName}_network_out\","
+                + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                + f"\"device\":{{\"identifiers\":[\"{deviceName}_sensor\"],"
+                + f"\"name\":\"{deviceNameDisplay}\",\"model\":\"{deviceModel}\", \"manufacturer\":\"{deviceManufacturer}\"}},"
+                + f"\"icon\":\"mdi:arrow-up\"}}",
+        qos=1,
+        retain=True,
+    )
 
     if "check_available_updates" in settings and settings["check_available_updates"]:
         # import apt
@@ -627,7 +677,7 @@ def send_config_message(mqttClient):
 
         mqttClient.publish(
             topic=f"homeassistant/sensor/{deviceName}/rustserver_network_in/config",
-            payload=f"{{\"name\":\"{deviceNameDisplay} Network In\","
+            payload=f"{{\"name\":\"{deviceNameDisplay} Rust Network In\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
                     + '"unit_of_measurement":"kB/s",'
                     + '"value_template":"{{value_json.rust_server_network_in}}",'
@@ -642,7 +692,7 @@ def send_config_message(mqttClient):
 
         mqttClient.publish(
             topic=f"homeassistant/sensor/{deviceName}/rustserver_network_out/config",
-            payload=f"{{\"name\":\"{deviceNameDisplay} Network Out\","
+            payload=f"{{\"name\":\"{deviceNameDisplay} Rust Network Out\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
                     + '"unit_of_measurement":"kB/s",'
                     + '"value_template":"{{value_json.rust_server_network_out}}",'
@@ -725,6 +775,8 @@ if __name__ == "__main__":
     deviceName = settings["deviceName"].replace(" ", "").lower()
     deviceNameDisplay = settings["deviceName"]
     deviceManufacturer = settings["deviceName"]
+    network_stats_prev = psutil.net_io_counters()
+    network_stats_prev_time = time.time();
     if "deviceManufacturer" in settings and settings["deviceManufacturer"] != "":
         deviceManufacturer = settings["deviceManufacturer"]
 
