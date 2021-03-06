@@ -140,8 +140,8 @@ def updateSensors():
         payload_str = payload_str + f', "rust_server_entity_count": {rustresponse["EntityCount"]}'        
         payload_str = payload_str + f', "rust_server_framerate": {rustresponse["Framerate"]}'        
         payload_str = payload_str + f', "rust_server_memory": {rustresponse["Memory"]}'        
-        payload_str = payload_str + f', "rust_server_network_in": {rustresponse["NetworkIn"]}'        
-        payload_str = payload_str + f', "rust_server_network_out": {rustresponse["NetworkOut"]}'        
+        payload_str = payload_str + f', "rust_server_network_in": {rustresponse["NetworkIn"] / 1024}'        
+        payload_str = payload_str + f', "rust_server_network_out": {rustresponse["NetworkOut"] / 1024}'        
         previousResponse = rustresponse
     
     if "check_wifi_strength" in settings and settings["check_wifi_strength"]:
@@ -629,7 +629,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_network_in/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Network In\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
-                    + '"unit_of_measurement":"bps",'
+                    + '"unit_of_measurement":"kB/s",'
                     + '"value_template":"{{value_json.rust_server_network_in}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_network_in\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -644,7 +644,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_network_out/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Network Out\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
-                    + '"unit_of_measurement":"bps",'
+                    + '"unit_of_measurement":"kB/s",'
                     + '"value_template":"{{value_json.rust_server_network_out}}",'
                     + f"\"unique_id\":\"{deviceName}_sensor_rustserver_network_out\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
