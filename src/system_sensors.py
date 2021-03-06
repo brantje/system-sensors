@@ -142,12 +142,12 @@ def updateSensors():
             rustresponse = previousResponse
             rust_stat_fails = rust_stat_fails+1
             rust_online_status = False
-            
+
         if rust_stat_fails == 3:
             mqttClient.publish(f"system-sensors/sensor/{deviceName}/rust_server_availability", "offline", retain=True)
             write_message_to_console('Offline')
 
-        elif rust_online_status == True:
+        elif rust_online_status == True and rust_stat_fails > 0:
             rust_stat_fails = 0
             write_message_to_console('back online')
             mqttClient.publish(f"system-sensors/sensor/{deviceName}/rust_server_availability", "online", retain=True)
