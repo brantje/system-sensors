@@ -152,6 +152,7 @@ def updateSensors():
                 payload_str + f', "disk_use_{drive.lower()}": {get_disk_usage(settings["external_drives"][drive])}'
             )
     payload_str = payload_str + "}"
+    write_message_to_console(payload_str)
     mqttClient.publish(
         topic=f"system-sensors/sensor/{deviceName}/state",
         payload=payload_str,
@@ -523,6 +524,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_maxplayers/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Max players\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_max_players}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_max_players\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -537,6 +539,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_players/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Players\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_players}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_players\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -551,6 +554,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_players_queued/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Queued\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_players_queued}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_players_queued\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -565,6 +569,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_players_joining/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Joining\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"Players",'
                     + '"value_template":"{{value_json.rust_server_players_joining}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_players_joining\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -579,6 +584,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_entity_count/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Entity Count\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"Entities",'
                     + '"value_template":"{{value_json.rust_server_entity_count}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_entity_count\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -593,6 +599,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_framerate/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Framerate\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"FPS",'
                     + '"value_template":"{{value_json.rust_server_framerate}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_framerate\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -607,6 +614,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_memory/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Rust Server Memory\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"MB",'
                     + '"value_template":"{{value_json.rust_server_memory}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_memory\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -621,6 +629,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_network_in/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Network In\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"bps",'
                     + '"value_template":"{{value_json.rust_server_network_in}}",'
                     + f"\"unique_id\":\"{deviceName}_rustserver_network_in\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
@@ -635,6 +644,7 @@ def send_config_message(mqttClient):
             topic=f"homeassistant/sensor/{deviceName}/rustserver_network_out/config",
             payload=f"{{\"name\":\"{deviceNameDisplay} Network Out\","
                     + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                    + '"unit_of_measurement":"bps",'
                     + '"value_template":"{{value_json.rust_server_network_out}}",'
                     + f"\"unique_id\":\"{deviceName}_sensor_rustserver_network_out\","
                     + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
