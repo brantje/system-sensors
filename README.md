@@ -17,6 +17,7 @@ It currently logs the following data:
 * Memory usage
 * Power status of the RPI
 * Last boot
+* Network information
 * Last message received timestamp
 * Swap usage
 * Wifi signal strength
