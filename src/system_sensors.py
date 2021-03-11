@@ -92,6 +92,17 @@ def _on_message(client, userdata, message):
 previousResponse = False
 rust_stat_fails = 0
 
+def on_message(client, userdata, message):
+    print (f"Message received: {message.payload.decode()}"  )
+
+    if message.payload.decode() == "online":
+        send_config_message(client)
+    elif message.payload.decode() == "display_on":
+        reading = check_output(["vcgencmd", "display_power", "1"]).decode("UTF-8")
+        update_sensors()
+    elif message.payload.decode() == "display_off":
+        reading = check_output(["vcgencmd", "display_power", "0"]).decode("UTF-8")
+        update_sensors()
 
 # adjusted function name to match standard Python conventions. :)
 def update_sensors():
@@ -107,13 +118,16 @@ def update_sensors():
         "swap_usage": get_swap_usage(),
         "last_boot": get_last_boot(),
         "last_message": get_last_message(),
-        "host_name": get_host_name(),
+        "hostname": get_host_name(),
         "host_ip": get_host_ip(),
         "host_os": get_host_os(),
         "network_out": network["network_out_speed"],
         "network_in": network["network_in_speed"],
         "host_arch": get_host_arch(),
     }
+
+    if "rasp" in OS_DATA["ID"]:
+        payload["display"] = get_display_status()
 
     if settings.get("check_available_updates") and apt_enabled:
         payload["updates"] = get_updates()
@@ -201,7 +215,15 @@ def get_temp():
         return str(reading[0] + reading[1] + "." + reading[2])
     return 0.0
 
-
+def get_display_status():
+    display_state = ""
+    if "rasp" in OS_DATA["ID"]:
+        reading = check_output([vcgencmd, "display_power"]).decode("UTF-8")
+        display_state = str(re.findall("^display_power=(?P<display_state>[01]{1})$", reading)[0])
+    else:
+        display_state = "Unknown"
+    return display_state
+    
 def get_disk_usage(path):
     return str(psutil.disk_usage(path).percent)
 
@@ -338,6 +360,11 @@ def remove_old_topics(client, device_display_name, external_drives=None):
     for drive in external_drives:
         topics.append(
             f"homeassistant/sensor/{device_display_name}/{device_display_name}DiskUse{drive}/config"
+        )
+
+    if "rasp" in OS_DATA["ID"]:           
+        topics.append(
+            f"homeassistant/switch/{device_display_name}/{device_display_name}Display/config"
         )
     for x in topics:
         client.publish(topic=x, payload="", qos=1, retain=False)
@@ -529,7 +556,7 @@ def send_config_message(client):
             deviceName,
             deviceNameDisplay,
             deviceManufacturer,
-            "host_name",
+            "hostname",
             "Hostname",
             "mdi:card-account-details",
         ),
@@ -592,7 +619,32 @@ def send_config_message(client):
         else:
             print_flush("import of apt failed!")
 
-    # Note, I did change the interface on these items slightly, these items used to be under topic "rustserver", they're now under the topic "rust_server"
+        if "rasp" in OS_DATA["ID"]:
+                mqttClient.publish(
+                    topic=f"homeassistant/switch/{deviceName}/display/config",
+                    payload='{'
+                            + f"\"name\":\"{deviceNameDisplay} Display Switch\","
+                            + f"\"unique_id\":\"{deviceName}_switch_display\","
+                            + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                            + f"\"command_topic\":\"system-sensors/sensor/{deviceName}/command\","
+                            + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                            + '"value_template":"{{value_json.display}}",'
+                            + '"state_off":"0",'
+                            + '"state_on":"1",'
+                            + '"payload_off":"display_off",'
+                            + '"payload_on":"display_on",'
+                            + f"\"device\":{{"
+                                + f"\"identifiers\":[\"{deviceName}_sensor\"],"
+                                + f"\"name\":\"{deviceNameDisplay} Sensors\","
+                                + f"\"model\":\"{deviceModel}\","
+                                + '"manufacturer":\"{deviceManufacturer}\"'
+                            + '},'
+                            + '"icon":"mdi:monitor"}',
+                    qos=1,
+                    retain=True,
+                )
+
+    
     if settings.get("enable_rust_server"):
         rust_messages = [
             Message(
@@ -810,7 +862,7 @@ if __name__ == "__main__":
         settings.get("mqtt", {}).get("hostname"),
         settings.get("mqtt", {}).get("port"),
     )
-
+    mqttClient.on_message = on_message
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -822,7 +874,7 @@ if __name__ == "__main__":
     job.start()
 
     mqttClient.loop_start()
-
+    update_sensors()
     while True:
         try:
             sys.stdout.flush()
