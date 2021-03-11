@@ -218,12 +218,12 @@ def get_temp():
 def get_display_status():
     display_state = ""
     if "rasp" in OS_DATA["ID"]:
-        reading = check_output([vcgencmd, "display_power"]).decode("UTF-8")
+        reading = check_output(["vcgencmd", "display_power"]).decode("UTF-8")
         display_state = str(re.findall("^display_power=(?P<display_state>[01]{1})$", reading)[0])
     else:
         display_state = "Unknown"
     return display_state
-    
+
 def get_disk_usage(path):
     return str(psutil.disk_usage(path).percent)
 
