@@ -427,7 +427,7 @@ class Message:
         self.device_name = device_name
         self.device_display_name = device_display_name
         self.device_manufacturer = device_manufacturer
-
+        self.device_display_model = device_model
         self.snake_name = snake_name
         self.name_suffix = name_suffix
         self.icon = icon
