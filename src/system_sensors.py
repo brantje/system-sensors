@@ -9,6 +9,7 @@ import threading
 import time
 from datetime import timedelta
 from re import findall
+import re
 from subprocess import check_output
 import paho.mqtt.client as mqtt
 import psutil
@@ -804,6 +805,9 @@ def _on_connect(client, userdata, flags, rc):
         mqttClient.publish(
             f"system-sensors/sensor/{deviceName}/availability", "online", retain=True
         )
+        print("subscribing : " + f"system-sensors/sensor/{deviceName}/command")
+        client.subscribe(f"system-sensors/sensor/{deviceName}/command")#subscribe
+        client.publish(f"system-sensors/sensor/{deviceName}/command", "setup", retain=True)
     else:
         print_flush("Connection failed")
 
