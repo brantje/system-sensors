@@ -652,7 +652,7 @@ def send_config_message(client):
                                 + f"\"identifiers\":[\"{deviceName}_sensor\"],"
                                 + f"\"name\":\"{deviceNameDisplay} Sensors\","
                                 + f"\"model\":\"{deviceModel}\","
-                                + '"manufacturer":\"{deviceManufacturer}\"'
+                                + f'"manufacturer":\"{deviceManufacturer}\"'
                             + '},'
                             + '"icon":"mdi:monitor"}',
                     qos=1,
