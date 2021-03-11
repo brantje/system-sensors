@@ -414,7 +414,7 @@ class Message:
         self,
         device_name,
         device_display_name,
-        device_model
+        device_model,
         device_manufacturer,
         snake_name,
         name_suffix,
