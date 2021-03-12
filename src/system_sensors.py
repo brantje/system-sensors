@@ -660,7 +660,7 @@ def send_config_message(client):
                             + '"payload_on":"display_on",'
                             + f"\"device\":{{"
                                 + f"\"identifiers\":[\"{deviceName}_sensor\"],"
-                                + f"\"name\":\"{deviceNameDisplay} Sensors\","
+                                + f"\"name\":\"{deviceNameDisplay}\","
                                 + f"\"model\":\"{deviceModel}\","
                                 + f'"manufacturer":\"{deviceManufacturer}\"'
                             + '},'
