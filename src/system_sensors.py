@@ -99,8 +99,8 @@ def on_message(client, userdata, message):
     if message.payload.decode() == "online":
         send_config_message(client)
     elif message.payload.decode() == "display_on":
-        reading = check_output(["echo", "display_power", "1"]).decode("UTF-8")
-        reading = check_output(["vcgencmd", "\"standby 0\"", "|", "cec-client", "-s", "-d", "0"]).decode("UTF-8")
+        reading = check_output(["vcgencmd", "display_power", "1"]).decode("UTF-8")
+        reading = check_output(["echo", "\"standby 0\"", "|", "cec-client", "-s", "-d", "0"]).decode("UTF-8")
         print_flush(reading)
         update_sensors()
     elif message.payload.decode() == "display_off":
