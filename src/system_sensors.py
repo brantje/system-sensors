@@ -18,7 +18,7 @@ import yaml
 import csv
 import websocket
 import json
-from os import path
+import os
 from pytz import timezone
 
 try:
@@ -95,16 +95,24 @@ rust_stat_fails = 0
 
 def on_message(client, userdata, message):
     print (f"Message received: {message.payload.decode()}"  )
-
+    base_dir = os.path.dirname(os.path.realpath(__file__))
     if message.payload.decode() == "online":
         send_config_message(client)
     elif message.payload.decode() == "display_on":
-        reading = check_output(["vcgencmd", "display_power", "1"]).decode("UTF-8")
-        reading = check_output.run(["echo \"standby 0\"", "|", "cec-client", "-s", "-d", "0"]).decode("UTF-8")
-        print_flush(reading)
+        print_flush('Switching display on')
+        print_flush(check_output(["vcgencmd", "display_power", "1"]).decode("UTF-8")) 
+        print_flush('Sending cec wake up')
+        print_flush(check_output(['bash', base_dir + '/cec_on']))
+        print_flush('Sending cec wake up 2')
+        # Some tv's require a second wake up command... Looking at you Samsung
+        print_flush(check_output(['bash', base_dir + '/cec_on']))
         update_sensors()
+    
     elif message.payload.decode() == "display_off":
+        print_flush('Switching display off')
         reading = check_output(["vcgencmd", "display_power", "0"]).decode("UTF-8")
+        check_output(['bash', base_dir + '/cec_off'])
+        print_flush('Display switched off')
         update_sensors()
 
 # adjusted function name to match standard Python conventions. :)
@@ -211,7 +219,7 @@ def get_temp():
         reading = check_output(["vcgencmd", "measure_temp"]).decode("UTF-8")
         return str(findall("\d+\.\d+", reading)[0])
 
-    if path.exists("/sys/class/thermal/thermal_zone0"):
+    if os.path.exists("/sys/class/thermal/thermal_zone0"):
         reading = check_output(["cat", "/sys/class/thermal/thermal_zone0/temp"]).decode(
             "UTF-8"
         )
