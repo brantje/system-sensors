@@ -814,7 +814,7 @@ def send_config_message(client):
                 "rust_server_framerate",
                 "Framerate",
                 "mdi:crosshairs",
-                unit_of_measurement="Entities",
+                unit_of_measurement="FPS",
                 availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
