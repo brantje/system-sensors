@@ -1,0 +1,4 @@
+#!/bin/bash
+echo "Turning on tv..."
+echo "on 0" | cec-client -s -d 0
+#echo "scan 0" | cec-client -s -d 0
