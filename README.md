@@ -1,8 +1,5 @@
 # System sensors
-[![GitHub Release][releases-shield]][releases]
-[![License][license-shield]](LICENSE.md)
-
-![Project Maintenance][maintenance-shield]
+[![GitHub Release][releases-shield]][releases] [![License][license-shield]](LICENSE.md) ![Project Maintenance][maintenance-shield]
 [![GitHub Activity][commits-shield]][commits]
 
 [![Community Forum][forum-shield]][forum]   
