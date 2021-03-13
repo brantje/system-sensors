@@ -100,12 +100,12 @@ def on_message(client, userdata, message):
         send_config_message(client)
     elif message.payload.decode() == "display_on":
         print_flush('Switching display on')
-        print_flush(check_output(["vcgencmd", "display_power", "1"]).decode("UTF-8")) 
+        check_output(["vcgencmd", "display_power", "1"]).decode("UTF-8")
         print_flush('Sending cec wake up')
-        print_flush(check_output(['bash', base_dir + '/cec_on']))
+        check_output(['bash', base_dir + '/cec_on'])
         print_flush('Sending cec wake up 2')
         # Some tv's require a second wake up command... Looking at you Samsung
-        print_flush(check_output(['bash', base_dir + '/cec_on']))
+        check_output(['bash', base_dir + '/cec_on'])
         update_sensors()
     
     elif message.payload.decode() == "display_off":
