@@ -454,6 +454,9 @@ class Message:
         self.command_topic = command_topic
         self.state_off  = state_off
         self.state_on  = state_on
+        self.payload_off = payload_off
+        self.payload_on = payload_on
+
 
     def to_dict(self):
         device_dict = {
