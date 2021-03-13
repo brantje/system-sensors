@@ -450,8 +450,8 @@ class Message:
         self,
         device_name,
         device_display_name,
-        device_model,
         device_manufacturer,
+        device_model,
         snake_name,
         name_suffix,
         icon,
@@ -718,30 +718,6 @@ def send_config_message(client):
                     payload_off="display_off",
                     payload_on="display_on"
                 ))
-                
-                # mqttClient.publish(
-                #     topic=f"homeassistant/switch/{deviceName}/display/config",
-                #     payload='{'
-                #             # + f"\"name\":\"{deviceNameDisplay} Display Switch\","
-                #             # + f"\"unique_id\":\"{deviceName}_switch_display\","
-                #             # + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
-                #             + f"\"command_topic\":\"\","
-                #             # + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
-                #             # + '"value_template":"{{value_json.display}}",'
-                #             # + '"state_off":"0",'
-                #             # + '"state_on":"1",'
-                #             + '"payload_off":"display_off",'
-                #             + '"payload_on":"display_on",'
-                #             # + f"\"device\":{{"
-                #             #     + f"\"identifiers\":[\"{deviceName}_sensor\"],"
-                #             #     + f"\"name\":\"{deviceNameDisplay}\","
-                #             #     + f"\"model\":\"{deviceModel}\","
-                #             #     + f'"manufacturer":\"{deviceManufacturer}\"'
-                #             # + '},'
-                #             + '"icon":"mdi:monitor"}',
-                #     qos=1,
-                #     retain=True,
-                # )
 
     
     if settings.get("enable_rust_server"):
