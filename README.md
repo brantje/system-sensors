@@ -6,18 +6,22 @@
 [![GitHub Activity][commits-shield]][commits]
 
 [![Community Forum][forum-shield]][forum]
+Based on [Sennevds/system_sensors](https://github.com/Sennevds/system_sensors)
 
 
-I’ve created a simple python script that runs every 60 seconds and sends several system data over MQTT. It uses the MQTT Discovery for Home Assistant so you don’t need to configure anything in Home Assistant if you have discovery enabled for MQTT
+Changes:
+* Network info
+* More info about disks
+* Added Rust server info
+* Control screen with CEC
 
-It currently logs the following data:
+In addition to the original features:
 * CPU usage
 * CPU temperature
 * Disk usage
 * Memory usage
 * Power status of the RPI
 * Last boot
-* Network information
 * Last message received timestamp
 * Swap usage
 * Wifi signal strength
@@ -32,7 +36,7 @@ It currently logs the following data:
 You need to have at least __python 3.6__ installed to use System Sensors.
 
 # Installation:
-1. Clone this repo >> git clone https://github.com/Sennevds/system_sensors.git
+1. Clone this repo >> git clone https://github.com/brantje/system-sensors
 2. cd system_sensors
 3. pip3 install -r requirements.txt
 4. sudo apt-get install python3-apt
@@ -118,11 +122,11 @@ Example:
 
 ![alt text](images/example.png?raw=true "Example")
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/Sennevds/system_sensors?style=for-the-badge
-[commits]: https://github.com/sennevds/system_sensors/commits/master
+[commits-shield]: https://img.shields.io/github/commit-activity/y/brantje/system-sensors?style=for-the-badge
+[commits]: https://github.com/sennevds/brantje/commits/master
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/t/remote-rpi-system-monitor/129274
-[license-shield]: https://img.shields.io/github/license/sennevds/system_sensors.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2020.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/sennevds/system_sensors.svg?style=for-the-badge
-[releases]: https://github.com/sennevds/system_sensors/releases
+[license-shield]: https://img.shields.io/github/license/brantje/system-sensors.svg?style=for-the-badge
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2021.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/brantje/system-sensors.svg?style=for-the-badge
+[releases]: https://github.com/brantje/system-sensors/releases
