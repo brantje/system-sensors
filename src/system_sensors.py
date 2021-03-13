@@ -121,9 +121,9 @@ def update_sensors():
     global rust_stat_fails
     print_flush("Updating sensors...")
     network = get_network_usage()
+    disk = get_disk_usage("/")
     payload = {
         "temperature": get_temp(),
-        "disk_use": get_disk_usage("/"),
         "memory_use": get_memory_usage(),
         "cpu_usage": get_cpu_usage(),
         "swap_usage": get_swap_usage(),
@@ -190,12 +190,19 @@ def update_sensors():
 
     if settings.get("check_wifi_strength"):
         payload["wifi_strength"] = get_wifi_strength()
-    if "external_drives" in settings:
-        for drive in settings["external_drives"]:
-            payload[f"disk_use_{drive.lower()}"] = get_disk_usage(
-                settings["external_drives"][drive]
-            )
 
+    drives = merge({
+        "rootfs": { "/" }
+    }, settings.get("external_drives", []))
+
+    for drive in drives:
+        path = list(drives[drive])[0]
+        disk = psutil.disk_usage(path)
+        payload[f"disk_use_{drive.lower()}"] = format_bytes(disk.percent)[0]
+        payload[f"disk_used_{drive.lower()}"] = format_bytes(disk.used)[0]
+        payload[f"disk_total_{drive.lower()}"] = format_bytes(disk.total)[0]
+        payload[f"disk_free_{drive.lower()}"] = format_bytes(disk.free)[0]
+    
     payload_str = json.dumps(payload)
     print_flush(payload_str)
     mqttClient.publish(
@@ -235,8 +242,24 @@ def get_display_status():
         display_state = "Unknown"
     return display_state
 
+def format_bytes(size):
+    # 2**10 = 1024
+    power = 2**10
+    n = 0
+    power_labels = {0 : '', 1: 'KB', 2: 'MB', 3: 'GB', 4: 'TB'}
+    while size > power:
+        size /= power
+        n += 1
+    return round(size,2), power_labels[n]
+
 def get_disk_usage(path):
-    return str(psutil.disk_usage(path).percent)
+    disk = psutil.disk_usage(path)
+    return {
+        "total": format_bytes(disk.total)[0],
+        "used": format_bytes(disk.used)[0],
+        "free": format_bytes(disk.free)[0],
+        "percent": disk.percent
+    }
 
 
 def get_memory_usage():
@@ -354,7 +377,6 @@ def remove_old_topics(client, device_display_name, external_drives=None):
 
     topic_words = [
         "Temp",
-        "DiskUse",
         "MemoryUse",
         "CpuUsage",
         "SwapUsage",
@@ -368,7 +390,11 @@ def remove_old_topics(client, device_display_name, external_drives=None):
         f"homeassistant/sensor/{device_display_name}/{device_display_name}{word}/config"
         for word in topic_words
     ]
-    for drive in external_drives:
+
+    drives = merge({
+        "rootfs": { "/" }
+    }, external_drives)
+    for drive in drives:
         topics.append(
             f"homeassistant/sensor/{device_display_name}/{device_display_name}DiskUse{drive}/config"
         )
@@ -437,7 +463,8 @@ class Message:
         state_off=None,
         state_on=None,
         payload_off=None,
-        payload_on=None
+        payload_on=None,
+        value_template=None
     ):
         self.device_name = device_name
         self.device_display_name = device_display_name
@@ -456,7 +483,7 @@ class Message:
         self.state_on  = state_on
         self.payload_off = payload_off
         self.payload_on = payload_on
-
+        self.value_template = value_template
 
     def to_dict(self):
         device_dict = {
@@ -477,6 +504,9 @@ class Message:
             "device": device_dict,
             "icon": self.icon,
         }
+        if self.value_template:
+            payload["value_template"] = self.value_template
+
         if self.device_class:
             payload["device_class"] = self.device_class
         if self.unit_of_measurement:
@@ -531,6 +561,20 @@ def _unique_id(device_name, key):
 def _state_topic(device_name, value="state"):
     return f"system-sensors/sensor/{device_name}/{value}"
 
+def merge(a, b, path=None):
+    "merges b into a"
+    if path is None: path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass # same leaf value
+            else:
+                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+        else:
+            a[key] = b[key]
+    return a
 
 def send_config_message(client):
     print_flush("send config message")
@@ -545,16 +589,6 @@ def send_config_message(client):
             "mdi:thermometer",
             unit_of_measurement="°C",
             device_class="temperature",
-        ),
-        Message(
-            deviceName,
-            deviceNameDisplay,
-            deviceManufacturer,
-            deviceModel,
-            "disk_use",
-            "Disk Use",
-            "mdi:micro-sd",
-            unit_of_measurement="%",
         ),
         Message(
             deviceName,
@@ -837,20 +871,56 @@ def send_config_message(client):
                 device_class="signal_strength",
             )
         )
+    drives = merge({
+        "rootfs": { "/" }
+    }, settings.get("external_drives", []))
 
-    for drive in settings.get("external_drives", []):
-        messges.append(
-            Message(
-                deviceName,
-                deviceNameDisplay,
-                deviceManufacturer,
-                deviceModel,
-                f"disk_use_{drive.lower()}",
-                f"Disk Use {drive}",
-                "mdi:harddisk",
-                unit_of_measurement="%",
-            )
-        )
+    for drive in drives:
+        path = list(drives[drive])[0]
+
+        disk = psutil.disk_usage(path)
+        messages.append(Message(
+            deviceName,
+            deviceNameDisplay,
+            deviceManufacturer,
+            deviceModel,
+            f"disk_use_{drive.lower()}",
+             f"Disk Use {drive}",
+            "mdi:micro-sd",
+            unit_of_measurement="%",
+        ))
+        messages.append(Message(
+            deviceName,
+            deviceNameDisplay,
+            deviceManufacturer,
+            deviceModel,
+            f"disk_used_{drive.lower()}",
+            f"Disk Used {drive}",
+            "mdi:micro-sd",
+            unit_of_measurement=format_bytes(disk.used)[1],
+        ))
+        messages.append(Message(
+            deviceName,
+            deviceNameDisplay,
+            deviceManufacturer,
+            deviceModel,
+            f"disk_total_{drive.lower()}",
+            f"Disk Total {drive}",
+            "mdi:micro-sd",
+            unit_of_measurement=format_bytes(disk.total)[1],
+        ))
+        messages.append(Message(
+            deviceName,
+            deviceNameDisplay,
+            deviceManufacturer,
+            deviceModel,
+            f"disk_free_{drive.lower()}",
+            f"Disk Free {drive}",
+            "mdi:micro-sd",
+            unit_of_measurement=format_bytes(disk.free)[1],
+        ))
+
+
 
     for message in messages:
         message.publish(client)
