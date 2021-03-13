@@ -433,6 +433,11 @@ class Message:
         unit_of_measurement=None,
         availability_topic="availability",
         unique_id_prefix="sensor_",
+        command_topic=None,
+        state_off=None,
+        state_on=None,
+        payload_off=None,
+        payload_on=None
     ):
         self.device_name = device_name
         self.device_display_name = device_display_name
@@ -446,6 +451,9 @@ class Message:
         self.unit_of_measurement = unit_of_measurement
         self.availability_topic = availability_topic
         self.unique_id_prefix = unique_id_prefix
+        self.command_topic = command_topic
+        self.state_off  = state_off
+        self.state_on  = state_on
 
     def to_dict(self):
         device_dict = {
@@ -471,6 +479,20 @@ class Message:
         if self.unit_of_measurement:
             payload["unit_of_measurement"] = self.unit_of_measurement
 
+        if self.command_topic:
+            payload["command_topic"] = self.command_topic
+        
+        if self.state_off:
+            payload["state_off"] = self.state_off
+        if self.state_on:
+            payload["state_on"] = self.state_on
+        
+        if self.payload_on:
+            payload["payload_on"] = self.payload_on
+        if self.payload_off:
+            payload["payload_off"] = self.payload_off
+        
+        
         return {
             "topic": _topic_url(self.device_name, self.snake_name),
             "payload": payload,
@@ -645,29 +667,44 @@ def send_config_message(client):
             print_flush("import of apt failed!")
 
         if "rasp" in OS_DATA["ID"]:
-                mqttClient.publish(
-                    topic=f"homeassistant/switch/{deviceName}/display/config",
-                    payload='{'
-                            + f"\"name\":\"{deviceNameDisplay} Display Switch\","
-                            + f"\"unique_id\":\"{deviceName}_switch_display\","
-                            + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
-                            + f"\"command_topic\":\"system-sensors/sensor/{deviceName}/command\","
-                            + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
-                            + '"value_template":"{{value_json.display}}",'
-                            + '"state_off":"0",'
-                            + '"state_on":"1",'
-                            + '"payload_off":"display_off",'
-                            + '"payload_on":"display_on",'
-                            + f"\"device\":{{"
-                                + f"\"identifiers\":[\"{deviceName}_sensor\"],"
-                                + f"\"name\":\"{deviceNameDisplay}\","
-                                + f"\"model\":\"{deviceModel}\","
-                                + f'"manufacturer":\"{deviceManufacturer}\"'
-                            + '},'
-                            + '"icon":"mdi:monitor"}',
-                    qos=1,
-                    retain=True,
-                )
+                messages.append(Message(
+                    deviceName,
+                    deviceNameDisplay,
+                    deviceManufacturer,
+                    deviceModel,
+                    "switch_display",
+                    "Display Switch",
+                    "mdi:monitor",
+                    command_topic=f"system-sensors/sensor/{deviceName}/command",
+                    state_off="0",
+                    state_on="1",
+                    payload_off="display_off",
+                    payload_on="display_on"
+                ))
+                
+                # mqttClient.publish(
+                #     topic=f"homeassistant/switch/{deviceName}/display/config",
+                #     payload='{'
+                #             # + f"\"name\":\"{deviceNameDisplay} Display Switch\","
+                #             # + f"\"unique_id\":\"{deviceName}_switch_display\","
+                #             # + f"\"availability_topic\":\"system-sensors/sensor/{deviceName}/availability\","
+                #             + f"\"command_topic\":\"\","
+                #             # + f"\"state_topic\":\"system-sensors/sensor/{deviceName}/state\","
+                #             # + '"value_template":"{{value_json.display}}",'
+                #             # + '"state_off":"0",'
+                #             # + '"state_on":"1",'
+                #             + '"payload_off":"display_off",'
+                #             + '"payload_on":"display_on",'
+                #             # + f"\"device\":{{"
+                #             #     + f"\"identifiers\":[\"{deviceName}_sensor\"],"
+                #             #     + f"\"name\":\"{deviceNameDisplay}\","
+                #             #     + f"\"model\":\"{deviceModel}\","
+                #             #     + f'"manufacturer":\"{deviceManufacturer}\"'
+                #             # + '},'
+                #             + '"icon":"mdi:monitor"}',
+                #     qos=1,
+                #     retain=True,
+                # )
 
     
     if settings.get("enable_rust_server"):
