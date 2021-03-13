@@ -10,7 +10,7 @@ client_id: servereu
 timezone: Europe/Amsterdam
 update_interval: 5 #Defaults to 60
 check_wifi_strength: false
-check_available_updates: true
+check_available_updates: false
 enable_rust_server: true
 rust_server_ip: 
 rust_rcon_port:

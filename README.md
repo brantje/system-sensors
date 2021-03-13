@@ -50,11 +50,16 @@ You need to have at least __python 3.6__ installed to use System Sensors.
 | user | false | \ | The userlogin( if defined) for the MQTT broker
 | password | false | \ | the password ( if defined) for the MQTT broker
 | deviceName | true | \ | device name is sent with topic
+| deviceManufacturer | true | \ | device manufacturer is sent with topic
+| deviceModel | true | \ | device model is sent with topic
 | client_id | true | \ | client id to connect to the MQTT broker
 | timezone | true | \ | Your local timezone (you can find the list of timezones here: [time zones](https://gist.github.com/heyalexej/8bf688fd67d7199be4a1682b3eec7568))
-| power_integer_state(Deprecated) | false | false | Deprecated
 | update_interval | false | 60 | The update interval to send new values to the MQTT broker 
 | check_available_updates | false | false | Check the # of avaiblable updates 
+| enable_rust_server | false | false | Enable checking of rust server
+| rust_server_ip | false | localhost | Enable checking of rust server
+| rust_rcon_port | false | 28016 | Enable checking of rust server
+| rcon_password | false | \ | Enable checking of rust server
 | check_wifi_strength | false | false | Check the wifi strength 
 | external_drives | false | \ | Declare external drives you want to check disk usage of (see example settings.yaml)
 
