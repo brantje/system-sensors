@@ -6,7 +6,7 @@ Requires=systemd-networkd-wait-online.service
 [Service]
 User=pi
 Type=idle
-ExecStart=/usr/bin/python3 /home/pi/system_sensors/src/system_sensors.py /home/pi/system_sensors/src/settings.yaml
+ExecStart=/usr/bin/python3 /home/pi/system-sensors/src/system_sensors.py /home/pi/system-sensors/src/settings.yaml
 
 [Install]
 WantedBy=multi-user.target
