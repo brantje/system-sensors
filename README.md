@@ -57,9 +57,9 @@ You need to have at least __python 3.6__ installed to use System Sensors.
 | update_interval | false | 60 | The update interval to send new values to the MQTT broker 
 | check_available_updates | false | false | Check the # of avaiblable updates 
 | enable_rust_server | false | false | Enable checking of rust server
-| rust_server_ip | false | localhost | Enable checking of rust server
-| rust_rcon_port | false | 28016 | Enable checking of rust server
-| rcon_password | false | \ | Enable checking of rust server
+| rust_server_ip | false | localhost | Rust server ip
+| rust_rcon_port | false | 28016 | RCON Port of Rust server
+| rcon_password | false | \ | RCON Password
 | check_wifi_strength | false | false | Check the wifi strength 
 | external_drives | false | \ | Declare external drives you want to check disk usage of (see example settings.yaml)
 
