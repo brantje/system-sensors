@@ -129,7 +129,7 @@ Example:
 ![alt text](images/example.png?raw=true "Example")
 
 [commits-shield]: https://img.shields.io/github/commit-activity/y/brantje/system-sensors?style=for-the-badge
-[commits]: https://github.com/sennevds/brantje/commits/master
+[commits]: https://github.com/brantje/system-sensors/commits/master
 [forum-shield]: https://img.shields.io/badge/community-forum-brightgreen.svg?style=for-the-badge
 [forum]: https://community.home-assistant.io/t/remote-rpi-system-monitor/129274
 [license-shield]: https://img.shields.io/github/license/brantje/system-sensors.svg?style=for-the-badge
