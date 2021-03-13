@@ -5,7 +5,8 @@
 ![Project Maintenance][maintenance-shield]
 [![GitHub Activity][commits-shield]][commits]
 
-[![Community Forum][forum-shield]][forum]
+[![Community Forum][forum-shield]][forum]   
+
 Based on [Sennevds/system_sensors](https://github.com/Sennevds/system_sensors)
 
 
