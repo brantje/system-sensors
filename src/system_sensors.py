@@ -158,23 +158,18 @@ def update_sensors():
             response = previousResponse
             rust_stat_fails += 1
             rust_online_status = False
+        payload["rust_server_status"] = "Online"
+        # if rust_stat_fails == 3:
+        #     print_flush("Offline")
+        if rust_stat_fails >= 3 and rust_online_status == False:
+            payload["rust_server_status"] = "Offline"
 
-        if rust_stat_fails == 3:
-            mqttClient.publish(
-                f"system-sensors/sensor/{deviceName}/rust_server_availability",
-                "offline",
-                retain=True,
-            )
-            print_flush("Offline")
 
         elif rust_online_status == True and rust_stat_fails > 0:
             rust_stat_fails = 0
             print_flush("back online")
-            mqttClient.publish(
-                f"system-sensors/sensor/{deviceName}/rust_server_availability",
-                "online",
-                retain=True,
-            )
+            payload["rust_server_status"] = "Online"
+
 
         if response:
             payload["rust_server_max_players"] = response["MaxPlayers"]
@@ -359,7 +354,7 @@ def get_rust_server_info(ip, port, password):
     ws = websocket.WebSocket()
 
     try:
-        ws.connect(server_uri)
+        ws.connect(server_uri, timeout=3)
         ws.send(command_json)
         response = ws.recv()
         ws.close()
@@ -727,11 +722,20 @@ def send_config_message(client):
                 deviceNameDisplay,
                 deviceManufacturer,
                 deviceModel,
+                "rust_server_status",
+                "Rust Server",
+                "mdi:cellphone-arrow-down",
+                
+            ),
+            Message(
+                deviceName,
+                deviceNameDisplay,
+                deviceManufacturer,
+                deviceModel,
                 "rust_server_max_players",
                 "Max players",
                 "mdi:cellphone-arrow-down",
                 unit_of_measurement="Players",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -743,7 +747,6 @@ def send_config_message(client):
                 "Players",
                 "mdi:account-group",
                 unit_of_measurement="Players",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -755,7 +758,6 @@ def send_config_message(client):
                 "Queued",
                 "mdi:human-queue",
                 unit_of_measurement="Players",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -767,7 +769,6 @@ def send_config_message(client):
                 "Joining",
                 "mdi:account-group",
                 unit_of_measurement="Players",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -779,7 +780,6 @@ def send_config_message(client):
                 "Entity Count",
                 "mdi:pine-tree",
                 unit_of_measurement="Entities",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -791,7 +791,6 @@ def send_config_message(client):
                 "Framerate",
                 "mdi:crosshairs",
                 unit_of_measurement="FPS",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -803,7 +802,6 @@ def send_config_message(client):
                 "Rust Server Memory",
                 "mdi:memory",
                 unit_of_measurement="MB",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -815,7 +813,6 @@ def send_config_message(client):
                 "Rust Network In",
                 "mdi:arrow-down",
                 unit_of_measurement="kB/s",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
             Message(
@@ -827,7 +824,6 @@ def send_config_message(client):
                 "Rust Network Out",
                 "mdi:arrow-up",
                 unit_of_measurement="kB/s",
-                availability_topic="rust_server_availability",
                 unique_id_prefix="",
             ),
         ]
@@ -904,12 +900,6 @@ def send_config_message(client):
     client.publish(
         f"system-sensors/sensor/{deviceName}/availability", "online", retain=True
     )
-    if settings.get("enable_rust_server"):
-        client.publish(
-            f"system-sensors/sensor/{deviceName}/rust_server_availability",
-            "online",
-            retain=True,
-        )
 
 
 def _parser():
@@ -1011,12 +1001,6 @@ if __name__ == "__main__":
                 "offline",
                 retain=True,
             )
-            if settings.get("enable_rust_server"):
-                mqttClient.publish(
-                    f"system-sensors/sensor/{deviceName}/rust_server_availability",
-                    "offline",
-                    retain=True,
-                )
             mqttClient.disconnect()
             mqttClient.loop_stop()
             sys.stdout.flush()
