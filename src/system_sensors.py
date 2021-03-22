@@ -459,7 +459,8 @@ class Message:
         state_on=None,
         payload_off=None,
         payload_on=None,
-        value_template=None
+        value_template=None,
+        sensor_type="sensor"
     ):
         self.device_name = device_name
         self.device_display_name = device_display_name
@@ -479,6 +480,7 @@ class Message:
         self.payload_off = payload_off
         self.payload_on = payload_on
         self.value_template = value_template
+        self.sensor_type = sensor_type
 
     def to_dict(self):
         device_dict = {
@@ -499,6 +501,7 @@ class Message:
             "device": device_dict,
             "icon": self.icon,
         }
+    
         if self.value_template:
             payload["value_template"] = self.value_template
 
@@ -520,9 +523,8 @@ class Message:
         if self.payload_off:
             payload["payload_off"] = self.payload_off
         
-        
         return {
-            "topic": _topic_url(self.device_name, self.snake_name),
+            "topic": _topic_url(self.device_name, self.snake_name, self.sensor_type),
             "payload": payload,
         }
 
@@ -536,8 +538,8 @@ class Message:
         )
 
 
-def _topic_url(device_name, key):
-    return f"homeassistant/sensor/{device_name}/{key}/config"
+def _topic_url(device_name, key, type="sensor"):
+    return f"homeassistant/{type}/{device_name}/{key}/config"
 
 
 def _payload_name(device_display_name, suffix):
@@ -711,8 +713,12 @@ def send_config_message(client):
                     state_off="0",
                     state_on="1",
                     payload_off="display_off",
-                    payload_on="display_on"
+                    payload_on="display_on",
+                    value_template=_value_json_name("display"),
+                    unique_id_prefix="",
+                    sensor_type="switch"
                 ))
+                
 
     
     if settings.get("enable_rust_server"):
