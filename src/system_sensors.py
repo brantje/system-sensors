@@ -981,7 +981,7 @@ if __name__ == "__main__":
         settings.get("mqtt", {}).get("user"),
         settings.get("mqtt", {}).get("password"),
         settings.get("mqtt", {}).get("hostname"),
-        settings.get("mqtt", {}).get("port"),
+        settings.get("mqtt", {}).get("port", 1883),
     )
     mqttClient.on_message = on_message
     signal.signal(signal.SIGTERM, signal_handler)
